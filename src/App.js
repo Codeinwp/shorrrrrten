@@ -7,13 +7,16 @@ import GenerateURL from './components/GenerateURL';
 import List from './components/List';
 import { makeRequest } from './utils';
 
+const { VITE_GOD_MODE } = import.meta.env;
+
 const App = () => {
 	const [ data, setData ] = useState( [] );
 	const [ currentPage, setCurrentPage ] = useState( 0 );
 	const [ isLoading, setLoading ] = useState( true );
 	const [ isError, setIsError ] = useState( false );
+	const [ isGod, setIsGod ] = useState( VITE_GOD_MODE === undefined || VITE_GOD_MODE === 'true' );
 
-	const listURLs = async () => {
+	const listURLs = async ( query = '' ) => {
 		setLoading( true );
 
 		try {
@@ -23,6 +26,7 @@ const App = () => {
 				action: 'list',
 				perpage: perPage,
 				offset: currentPage * perPage,
+				...( query ? { query } : {} ),
 			} );
 
 			if ( 200 === response.statusCode ) {
@@ -37,6 +41,29 @@ const App = () => {
 
 		setLoading( false );
 	};
+
+	useEffect(() => {
+		if ( typeof VITE_GOD_MODE === 'string' && VITE_GOD_MODE !== 'true' && VITE_GOD_MODE !== 'false' ) {
+			window.godMode = {
+				enter( password ) {
+					if ( password === VITE_GOD_MODE ) {
+						setIsGod( true );
+						console.log( '🎉 God Mode activated!' );
+					} else {
+						console.log( '❌ Your hands are too short to box with the God.' );
+					}
+				},
+				exit() {
+					setIsGod( false );
+					console.log( '👋 God Mode deactivated!' );
+				},
+			};
+
+			return () => {
+				delete window.godMode;
+			};
+		}
+	}, []);
 
 	useEffect(() => {
 		listURLs();
@@ -58,6 +85,7 @@ const App = () => {
 				currentPage={ currentPage }
 				setCurrentPage={ setCurrentPage }
 				listURLs={ listURLs }
+				isGod={ isGod }
 				data={ data }
 			/>
 		</div>
